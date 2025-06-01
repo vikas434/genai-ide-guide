@@ -44,7 +44,7 @@ The Model Context Protocol (MCP) is an open protocol that standardizes how appli
    - Data encryption
 
 3. **Tool Management**
-   - Tool registration
+   - Tool registration and discovery
    - Parameter validation
    - Execution context
    - Result handling
@@ -55,176 +55,106 @@ The Model Context Protocol (MCP) is an open protocol that standardizes how appli
    - Cache management
    - Error recovery
 
-## Server Examples
+## Server Types and Capabilities
 
-### 1. GitHub MCP Server Example
+### 1. Version Control Systems (e.g., GitHub)
+- Repository management
+- Code search and analysis
+- Issue and PR tracking
+- Collaboration features
 
-Here's a basic implementation of a GitHub MCP server:
+### 2. Database Systems (e.g., PostgreSQL)
+- Query execution
+- Schema management
+- Data analysis
+- Transaction handling
 
-```typescript
-import { MCPServer, Tool, ToolResult } from '@mcp/core';
-import { Octokit } from '@octokit/rest';
+### 3. File Systems
+- File operations
+- Directory management
+- Content search
+- Metadata handling
 
-class GitHubMCPServer extends MCPServer {
-  private octokit: Octokit;
-
-  constructor(token: string) {
-    super();
-    this.octokit = new Octokit({ auth: token });
-    this.registerTools();
-  }
-
-  private registerTools() {
-    // Create Repository Tool
-    this.registerTool({
-      name: 'create_repository',
-      description: 'Create a new GitHub repository',
-      parameters: {
-        name: { type: 'string', required: true },
-        description: { type: 'string', required: false },
-        private: { type: 'boolean', default: false }
-      },
-      handler: async (params) => {
-        try {
-          const result = await this.octokit.repos.createForAuthenticatedUser({
-            name: params.name,
-            description: params.description,
-            private: params.private
-          });
-          return new ToolResult(true, result.data);
-        } catch (error) {
-          return new ToolResult(false, null, error.message);
-        }
-      }
-    });
-
-    // Search Code Tool
-    this.registerTool({
-      name: 'search_code',
-      description: 'Search for code in repositories',
-      parameters: {
-        query: { type: 'string', required: true },
-        language: { type: 'string', required: false }
-      },
-      handler: async (params) => {
-        try {
-          const query = params.language 
-            ? `${params.query} language:${params.language}`
-            : params.query;
-          
-          const result = await this.octokit.search.code({
-            q: query
-          });
-          return new ToolResult(true, result.data);
-        } catch (error) {
-          return new ToolResult(false, null, error.message);
-        }
-      }
-    });
-  }
-}
-
-// Usage
-const server = new GitHubMCPServer(process.env.GITHUB_TOKEN);
-server.start();
-```
-
-### 2. PostgreSQL MCP Server Example
-
-Here's a basic implementation of a PostgreSQL MCP server:
-
-```typescript
-import { MCPServer, Tool, ToolResult } from '@mcp/core';
-import { Pool } from 'pg';
-
-class PostgreSQLMCPServer extends MCPServer {
-  private pool: Pool;
-
-  constructor(connectionString: string) {
-    super();
-    this.pool = new Pool({ connectionString });
-    this.registerTools();
-  }
-
-  private registerTools() {
-    // Execute Query Tool
-    this.registerTool({
-      name: 'execute_query',
-      description: 'Execute a SQL query',
-      parameters: {
-        sql: { type: 'string', required: true },
-        params: { type: 'array', required: false }
-      },
-      handler: async (params) => {
-        try {
-          const result = await this.pool.query(params.sql, params.params);
-          return new ToolResult(true, {
-            rows: result.rows,
-            rowCount: result.rowCount
-          });
-        } catch (error) {
-          return new ToolResult(false, null, error.message);
-        }
-      }
-    });
-
-    // List Tables Tool
-    this.registerTool({
-      name: 'list_tables',
-      description: 'List all tables in the database',
-      parameters: {
-        schema: { type: 'string', default: 'public' }
-      },
-      handler: async (params) => {
-        try {
-          const sql = `
-            SELECT table_name, column_name, data_type
-            FROM information_schema.columns
-            WHERE table_schema = $1
-            ORDER BY table_name, ordinal_position;
-          `;
-          const result = await this.pool.query(sql, [params.schema]);
-          return new ToolResult(true, result.rows);
-        } catch (error) {
-          return new ToolResult(false, null, error.message);
-        }
-      }
-    });
-  }
-
-  async start() {
-    try {
-      await this.pool.connect();
-      console.log('Connected to PostgreSQL');
-      super.start();
-    } catch (error) {
-      console.error('Failed to connect to PostgreSQL:', error);
-      process.exit(1);
-    }
-  }
-
-  async stop() {
-    await this.pool.end();
-    super.stop();
-  }
-}
-
-// Usage
-const server = new PostgreSQLMCPServer(process.env.DATABASE_URL);
-server.start();
-```
+### 4. API Services
+- REST endpoint access
+- GraphQL queries
+- Authentication handling
+- Rate limiting
 
 ## Integration Methods
 
-[Previous integration methods content remains the same...]
+### 1. NPX Integration (Recommended for Quick Start)
+```bash
+npx @mcp/server-name
+```
+- Fastest way to get started
+- No installation required
+- Automatic updates
+- Development-friendly
+
+### 2. Docker Integration
+```bash
+docker run mcp/server-name
+```
+- Isolated environment
+- Consistent deployment
+- Easy scaling
+- Production-ready
+
+### 3. Local Installation
+```bash
+npm install @mcp/server-name
+```
+- Full control over configuration
+- Custom modifications
+- Local development
+- Offline capability
+
+### 4. Server-Sent Events (SSE)
+- Real-time updates
+- Lightweight communication
+- Browser compatibility
+- Unidirectional streaming
 
 ## Security Best Practices
 
-[Previous security content remains the same...]
+1. **Token Management**
+   - Use environment variables
+   - Rotate tokens regularly
+   - Implement least privilege
+   - Monitor token usage
+
+2. **Access Control**
+   - Define clear permissions
+   - Implement role-based access
+   - Regular access audits
+   - Secure token storage
+
+3. **Data Protection**
+   - Encrypt sensitive data
+   - Sanitize inputs
+   - Validate outputs
+   - Implement rate limiting
 
 ## Troubleshooting
 
-[Previous troubleshooting content remains the same...]
+1. **Common Issues**
+   - Connection timeouts
+   - Authentication failures
+   - Rate limiting
+   - Version mismatches
+
+2. **Debugging Tools**
+   - Server logs
+   - Network monitoring
+   - Performance metrics
+   - Error tracking
+
+3. **Best Practices**
+   - Enable verbose logging
+   - Monitor resource usage
+   - Implement health checks
+   - Set up alerts
 
 ## Resources
 
